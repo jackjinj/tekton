@@ -65,7 +65,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: "github-service-tekton"
-  namespace: rstudio
+  namespace: tekton-test
 spec:
   ports:
     - port: 8000
@@ -88,7 +88,7 @@ metadata:
   labels:
     app: "github-tekton"
   name: "github-ingress-tekton"
-  namespace: rstudio
+  namespace: tekton-test
 spec:
   tls:
     - secretName:
