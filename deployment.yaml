@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: "github-deployment-tekton"
+  namespace: rstudio
+  labels:
+    app: "github-tekton"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: "github-tekton"
+  template:
+    metadata:
+      labels:
+        app: "github-tekton"
+    spec:
+      volumes:
+        - name: "scratch-volume"
+          nfs:
+            path: /scratch
+            server: 10.157.132.5
+        - name: "flatiron-volume"
+          nfs:
+            path: /s3-euc1-sb-mdh-flatiron-edm
+            server: 10.157.166.123
+      containers:
+      - name: "github-tekton"
+        image: 269854209586.dkr.ecr.eu-central-1.amazonaws.com/phc-300
+        imagePullPolicy: Always
+        volumeMounts:
+          - name: "scratch-volume"
+            mountPath: /scratch
+          - name: "flatiron-volume"
+            mountPath: /mdh-flatiron-edm
+        resources:
+          limits:
+            cpu: 12
+            memory: 48Gi
+          requests:
+            cpu: 200m
+            memory: 1Gi
+        env:
+        - name: USERNAME
+          value: jinj40
+        
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+          - name: ssh
+            containerPort: 22
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "github-service-tekton"
+  namespace: rstudio
+spec:
+  ports:
+    - port: 8000
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app: "github-tekton"
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/force-ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/ssl-redirect: 'false'
+    nginx.ingress.kubernetes.io/proxy-body-size: '512m'
+  labels:
+    app: "github-tekton"
+  name: "github-ingress-tekton"
+  namespace: rstudio
+spec:
+  tls:
+    - secretName:
+      hosts:
+      - "tekton.dc.sb.eu.phcaa.science.roche.com"
+  rules:
+  - host: "tekton.dc.sb.eu.phcaa.science.roche.com"
+    http:
+      paths:
+      - backend:
+          serviceName: "github-service-tekton"
+          servicePort: 8000
