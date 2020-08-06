@@ -1,2 +1,2 @@
-FROM nginx
-RUN echo "hello world"
+FROM nginx:alpine
+COPY . /usr/share/nginx/html
