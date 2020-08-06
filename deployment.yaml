@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "github-deployment-tekton"
-  namespace: rstudio
+  namespace: tekton-test
   labels:
     app: "github-tekton"
 spec:
